@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tic Tac Toe vs Computer</title>
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .game {
+    text-align: center;
+    background: #111827;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.4);
+    position: relative;
+  }
+  h1 { margin-bottom: 10px; }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 90px);
+    gap: 10px;
+    margin: 20px auto;
+  }
+  .cell {
+    width: 90px;
+    height: 90px;
+    font-size: 2.5rem;
+    background: #1f2937;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .cell:hover { background: #374151; }
+  button {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    background: #22c55e;
+    color: white;
+  }
+  .score { margin-top: 15px; }
+
+  /* End game popup */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16px;
+  }
+  .popup {
+    background: #1f2937;
+    padding: 25px 35px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+</style>
+</head>
+<body>
+  <div class="game">
+    <h1>Tic Tac Toe</h1>
+    <div id="status">Your turn</div>
+    <div class="board" id="board"></div>
+    <button onclick="resetGame()">New Round</button>
+    <div class="score">
+      <p>Player Wins: <span id="playerWins">0</span></p>
+      <p>Computer Wins: <span id="computerWins">0</span></p>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="popup">
+        <h2 id="resultText"></h2>
+        <button onclick="resetGame()">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+window.onload = function() {
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const playerWinsEl = document.getElementById('playerWins');
+const computerWinsEl = document.getElementById('computerWins');
+const overlay = document.getElementById('overlay');
+const resultText = document.getElementById('resultText');
+
+let board = Array(9).fill("");
+let gameOver = false;
+
+let playerWins = Number(localStorage.getItem('playerWins')) || 0;
+let computerWins = Number(localStorage.getItem('computerWins')) || 0;
+updateScore();
+
+function createBoard() {
+  boardEl.innerHTML = '';
+  board.forEach((cell, i) => {
+    const div = document.createElement('div');
+    div.classList.add('cell');
+    div.textContent = cell;
+    div.onclick = () => playerMove(i);
+    boardEl.appendChild(div);
+  });
+}
+createBoard();
+
+function playerMove(i) {
+  if (board[i] || gameOver) return;
+  board[i] = 'X';
+  createBoard();
+  if (checkWinner('X')) return endGame('You Win!', 'player');
+  if (board.every(c => c)) return endGame("It's a Tie!");
+  statusEl.textContent = "Computer thinking...";
+  setTimeout(computerMove, 500);
+}
+
+function computerMove() {
+  let empty = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  let move = empty[Math.floor(Math.random()*empty.length)];
+  board[move] = 'O';
+  createBoard();
+  if (checkWinner('O')) return endGame('You Lose!', 'computer');
+  if (board.every(c => c)) return endGame("It's a Tie!");
+  statusEl.textContent = "Your turn";
+}
+
+function checkWinner(p) {
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  return wins.some(c => c.every(i => board[i] === p));
+}
+
+function endGame(msg, winner) {
+  gameOver = true;
+  resultText.textContent = msg;
+  overlay.style.display = 'flex';
+  statusEl.textContent = msg;
+
+  if (winner === 'player') playerWins++;
+  if (winner === 'computer') computerWins++;
+  localStorage.setItem('playerWins', playerWins);
+  localStorage.setItem('computerWins', computerWins);
+  updateScore();
+}
+
+function resetGame() {
+  board = Array(9).fill("");
+  gameOver = false;
+  overlay.style.display = 'none';
+  statusEl.textContent = "Your turn";
+  createBoard();
+}
+
+function updateScore() {
+  playerWinsEl.textContent = playerWins;
+  computerWinsEl.textContent = computerWins;
+}
+
+// expose resetGame so button can call it
+window.resetGame = resetGame;
+}
+</script>
+</body>
+</html>
